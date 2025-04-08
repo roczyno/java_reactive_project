@@ -42,7 +42,7 @@ public class JwtAuthenticationFilter implements WebFilter {
 					return chain.filter(exchange)
 							.contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth));
 				});
-	}
+	}git
 
 	private String extractToken(ServerWebExchange exchange){
 		String authorizationHeader=exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);

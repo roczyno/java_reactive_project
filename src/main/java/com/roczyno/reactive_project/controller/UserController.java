@@ -5,6 +5,7 @@ import com.roczyno.reactive_project.dto.UserResponse;
 import com.roczyno.reactive_project.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -30,6 +31,7 @@ public class UserController {
 	}
 
 	@GetMapping("/{userId}")
+	@PreAuthorize("authentication.principal.equals(#userId.toString())")
 	public Mono<ResponseEntity<UserResponse>> getUser(@PathVariable UUID userId) {
 		return userService.getUser(userId)
 				.map(userResponse -> ResponseEntity.status(HttpStatus.OK)
