@@ -1,0 +1,13 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Build') {
+            steps {
+                echo 'Starting the build process...'
+                // Add your build commands here, for example:
+                // sh 'mvn clean install'
+            }
+        }
+    }
+}
