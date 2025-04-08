@@ -5,8 +5,24 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Starting the build process...'
-                // Add your build commands here, for example:
-                // sh 'mvn clean install'
+                // Example: Compile code
+                // sh 'mvn clean compile'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo 'Starting the test process...'
+                // Example: Run unit tests
+                // sh 'mvn test'
+            }
+        }
+
+        stage('Dev') {
+            steps {
+                echo 'Starting the dev process...'
+                // Example: Deploy to dev environment
+                // sh './deploy-to-dev.sh'
             }
         }
     }
