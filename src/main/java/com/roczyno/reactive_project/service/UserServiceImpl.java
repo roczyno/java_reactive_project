@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Schedulers;
 
 import java.util.ArrayList;
@@ -27,10 +28,12 @@ import java.util.UUID;
 public class UserServiceImpl implements UserService {
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
+	private final Sinks.Many<UserResponse> usersSink;
 
-	public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+	public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, Sinks.Many<UserResponse> usersSink) {
 		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
+		this.usersSink = usersSink;
 	}
 
 	@Override
@@ -38,7 +41,8 @@ public class UserServiceImpl implements UserService {
 		return request
 				.flatMap(item->convertTOEntity(item))
 				.flatMap(item->userRepository.save(item))
-				.mapNotNull(item->convertToUserResponse(item));
+				.mapNotNull(item->convertToUserResponse(item))
+				.doOnSuccess(savedUser->usersSink.tryEmitNext(savedUser));
 
 	}
 
@@ -53,6 +57,13 @@ public class UserServiceImpl implements UserService {
 		Pageable pageable= PageRequest.of(page, limit);
 		return userRepository.findAllBy(pageable)
 				.map(user -> convertToUserResponse(user));
+	}
+
+	@Override
+	public Flux<UserResponse> streamUser() {
+		return usersSink.asFlux()
+				.publish()
+				.autoConnect(1);
 	}
 
 	private Mono<User> convertTOEntity(CreateUserRequest createUserRequest){

@@ -1,4 +1,4 @@
-GET http://localhost:8080/users
+GET http://localhost:8080/users/stream
 Accept: application/json
 
 ###
@@ -6,9 +6,9 @@ POST http://localhost:8080/users
 Content-Type: application/json
 
 {
-"firstName": "test1",
-  "lastName": "test1",
-  "email": "test1@gmail.com",
+"firstName": "test2",
+  "lastName": "test2",
+  "email": "test2@gmail.com",
   "password": "123456"
 }
 

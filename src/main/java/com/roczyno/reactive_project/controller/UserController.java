@@ -4,6 +4,7 @@ import com.roczyno.reactive_project.dto.CreateUserRequest;
 import com.roczyno.reactive_project.dto.UserResponse;
 import com.roczyno.reactive_project.service.UserService;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -11,6 +12,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.UUID;
 
 @RestController
@@ -48,5 +50,10 @@ public class UserController {
 			) {
 		return userService.getAllUsers(page,limit)
 				.map(userResponse -> ResponseEntity.status(HttpStatus.OK).body(userResponse));
+	}
+
+	@GetMapping(value = "/stream",produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+	public Flux<UserResponse> streamUsers(){
+		return userService.streamUser();
 	}
 }
