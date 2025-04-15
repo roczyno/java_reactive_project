@@ -34,8 +34,10 @@ public class UserController {
 
 	@GetMapping("/{userId}")
 	@PreAuthorize("authentication.principal.equals(#userId.toString())")
-	public Mono<ResponseEntity<UserResponse>> getUser(@PathVariable UUID userId) {
-		return userService.getUser(userId)
+	public Mono<ResponseEntity<UserResponse>> getUser(@PathVariable UUID userId,@RequestParam(name = "include",
+			required = false) String include,
+													  @RequestHeader(name = "Authorization") String jwt) {
+		return userService.getUser(userId,include,jwt)
 				.map(userResponse -> ResponseEntity.status(HttpStatus.OK)
 						.location(URI.create("/users/" + userId))
 						.body(userResponse))
