@@ -11,4 +11,4 @@ COPY target/reactive_project-0.0.1-SNAPSHOT.jar /app/reactive_project-0.0.1-SNAP
 EXPOSE 8080
 
 # Step 5: Run the application with the `java -jar` command
-ENTRYPOINT ["java", "-jar", "/app/my-app.jar"]
+ENTRYPOINT ["java", "-jar", "/app/reactive_project-0.0.1-SNAPSHOT.jar"]

@@ -1,5 +1,4 @@
 #!/usr/bin/env groovy
-@Library('jenkins-shared-library')_
 
 pipeline {
     agent any
@@ -7,41 +6,96 @@ pipeline {
         maven 'Maven'
     }
 
-    stages {
+    environment {
+        AWS_ACCESS_KEY_ID = credentials('aws-access-key-id')
+        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
+        EC2_USER = 'ec2-user'
+        EC2_HOST = credentials('ec2-host')
+        SSH_KEY = credentials('ec2-ssh-key')
+        DOCKER_IMAGE = 'roczyno/my-repo:jma-3.0'
+    }
 
-        stage('build jar'){
+    stages {
+        stage('build jar') {
             steps {
                 script {
-                  buildJar()
+                    echo 'Building JAR file...'
+                    sh 'mvn clean package -DskipTests'
+                    echo 'JAR file built successfully'
                 }
             }
-        
         }
 
         stage('build image') {
-            
             steps {
                 script {
-                buildImage 'roczyno/my-repo:jma-3.0'
+                    echo 'Building Docker image...'
+                    sh "docker build -t ${DOCKER_IMAGE} ."
+                    echo 'Docker image built successfully'
                 }
             }
         }
 
-        stage('Dev') {
+        stage('push image to Docker Hub') {
             steps {
-                echo 'Starting the dev process...'
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                        sh "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
+                        sh "docker push ${DOCKER_IMAGE}"
+                    }
+                }
+            }
+        }
 
+        stage('deploy to EC2') {
+            steps {
+                script {
+                    echo 'Deploying to EC2...'
+
+                    // Copy the SSH key to a temporary file with correct permissions
+                    sh '''
+                        mkdir -p ~/.ssh
+                        echo "$SSH_KEY" > ~/.ssh/ec2_key.pem
+                        chmod 600 ~/.ssh/ec2_key.pem
+                    '''
+
+                    // SSH into EC2 and deploy the application
+                    sh """
+                        ssh -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key.pem ${EC2_USER}@${EC2_HOST} '
+                            # Pull the latest Docker image
+                            docker pull ${DOCKER_IMAGE}
+
+                            # Stop and remove any existing container
+                            docker stop reactive-app || true
+                            docker rm reactive-app || true
+
+                            # Run the new container
+                            docker run -d --name reactive-app -p 8080:8080 ${DOCKER_IMAGE}
+
+                            # Clean up old images
+                            docker system prune -af
+                        '
+                    """
+
+                    // Clean up the temporary SSH key
+                    sh 'rm -f ~/.ssh/ec2_key.pem'
+
+                    echo 'Deployment completed successfully!'
+                }
             }
         }
     }
 
-//     post {
-//          always {
-//
-//          }
-//          success {
-//          }
-//          failure {
-//          }
-//     }
+    post {
+        always {
+            echo 'Pipeline execution completed'
+            sh 'docker logout'
+        }
+        success {
+            echo 'Pipeline executed successfully!'
+        }
+        failure {
+            echo 'Pipeline execution failed!'
+        }
+    }
 }
